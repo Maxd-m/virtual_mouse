@@ -1,6 +1,9 @@
 import cv2 as cv
 import mediapipe as mp
 import time
+import mouse
+import tkinter as tk
+
 
 
 class HandDetector():
@@ -41,6 +44,21 @@ class HandDetector():
 
         return lmList
 
+class Gestures():
+    def __init__(self) -> None:
+       pass
+        
+    def move_mouse(self,x,y,width,height):
+        #x,y son cooordenadas destino
+        #width y height son medidas de la pantalla
+
+        #transforma coordenadas de camara a pantalla
+        movX=width-(x*width)/610
+        movY=(y*height)/450
+        #obtiene posicion del mouse
+        position=mouse.get_position()
+        #mueve el mouse a las coordenadas de X y Y 
+        mouse.drag(position[0],position[1],movX,movY,True,0.5)
 
 def main():
     pTime = 0
@@ -48,12 +66,29 @@ def main():
     cap = cv.VideoCapture(0)
     detector = HandDetector()
 
+    # Crear una ventana oculta
+    root = tk.Tk()
+    root.withdraw()  # Ocultar la ventana
+
+    # Obtener el tamaño de la pantalla
+    width = root.winfo_screenwidth()
+    height = root.winfo_screenheight()
+
+    # Cerrar la ventana
+    root.destroy()
+    
+
     while True:
         success, img = cap.read()
         img = detector.findHands(img)
         lmlist = detector.findPosition (img)
+        movement = Gestures()
         if len(lmlist) != 0:
-            print(lmlist[4])
+            print(lmlist[8])
+            #el nodo 8 corresponde al dedo indice, la posicion 1 a X, la 2 a Y
+            movement.move_mouse(lmlist[8][1],lmlist[8][2],width,height)
+            #time.sleep(0.5)
+
 
 
         # Calcular FPS
