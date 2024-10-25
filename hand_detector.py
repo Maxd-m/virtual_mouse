@@ -1,10 +1,6 @@
 import cv2 as cv
 import mediapipe as mp
 import time
-import mouse
-import tkinter as tk
-
-
 
 class HandDetector():
     def __init__(self, mode=False, maxHands=2, modelComp=1, detectionCon=0.5, trackCon=0.5):
@@ -21,9 +17,7 @@ class HandDetector():
     def findHands(self, img, draw=True):
         imgRGB = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         self.results = self.hands.process(imgRGB)
-        #print(results.multi_hand_landmarks)
 
-        # Dibujar los puntos de las mano y sus conexiones
         if self.results.multi_hand_landmarks:
             for handLmks in self.results.multi_hand_landmarks:
                 if draw:
@@ -37,28 +31,10 @@ class HandDetector():
             for id, lm in enumerate(hand.landmark):
                 h, w, c = img.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
-                #print(id, cx, cy)
                 lmList.append([id, cx, cy])
                 if draw:
                     cv.circle(img, (cx, cy), 10,(255,0,255), cv.FILLED)
-
         return lmList
-
-class Gestures():
-    def __init__(self) -> None:
-       pass
-        
-    def move_mouse(self,x,y,width,height):
-        #x,y son cooordenadas destino
-        #width y height son medidas de la pantalla
-
-        #transforma coordenadas de camara a pantalla
-        movX=width-(x*width)/610
-        movY=(y*height)/450
-        #obtiene posicion del mouse
-        position=mouse.get_position()
-        #mueve el mouse a las coordenadas de X y Y 
-        mouse.drag(position[0],position[1],movX,movY,True,0.5)
 
 def main():
     pTime = 0
@@ -66,30 +42,12 @@ def main():
     cap = cv.VideoCapture(0)
     detector = HandDetector()
 
-    # Crear una ventana oculta
-    root = tk.Tk()
-    root.withdraw()  # Ocultar la ventana
-
-    # Obtener el tamaño de la pantalla
-    width = root.winfo_screenwidth()
-    height = root.winfo_screenheight()
-
-    # Cerrar la ventana
-    root.destroy()
-    
-
     while True:
         success, img = cap.read()
         img = detector.findHands(img)
-        lmlist = detector.findPosition (img)
-        movement = Gestures()
+        lmlist = detector.findPosition(img)
         if len(lmlist) != 0:
-            print(lmlist[8])
-            #el nodo 8 corresponde al dedo indice, la posicion 1 a X, la 2 a Y
-            movement.move_mouse(lmlist[8][1],lmlist[8][2],width,height)
-            #time.sleep(0.5)
-
-
+            print(lmlist[4])
 
         # Calcular FPS
         cTime = time.time()
