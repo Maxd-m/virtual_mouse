@@ -1,6 +1,7 @@
 import cv2 as cv
 import time
 import mouse
+import keyboard
 import tkinter as tk
 import numpy as np
 from hand_detector import HandDetector
@@ -25,6 +26,10 @@ class Gestures:
         self.clicking = False
         self.click_delay = 0.3
         self.last_click_time = 0
+        
+        # Variables para control de teclas
+        self.pressed_ss = False
+        
 
     def init_screen_size(self):
         root = tk.Tk()
@@ -36,12 +41,32 @@ class Gestures:
     def calculate_finger_distance(self, p1, p2):
         # Obtenido de ChatGPT
         return np.sqrt((p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2)
+    
+    def screenshot(self, img, landmark_list):
+        if len(landmark_list) >= 13:  # Aseguramos que tenemos los landmarks necesarios (0-12)
+            # Obtener posiciones de la punta del índice y su articulación
+            index_tip = landmark_list[12]  # Punta del dedo medio
+            index_joint = landmark_list[4]  # punta del pulgar
+
+            # Calcular distancia entre dedo medio y pulgar
+            distance = self.calculate_finger_distance(index_tip, index_joint)
+
+            # Si la distancia entre nodos es menor a 30 y no se esta 'presionando'
+            if distance < 30 and not self.pressed_ss:
+                keyboard.press_and_release('Ctrl + print screen')
+                print('captura tomada')
+                self.pressed_ss = True
+                return True
+            elif distance >= 40:
+                self.pressed_ss = False
+
+        return False
 
     def click_mouse(self, img, landmark_list):
-        if len(landmark_list) >= 9:  # Aseguramos que tenemos los landmarks necesarios (0-8)
+        if len(landmark_list) >= 13:  # Aseguramos que tenemos los landmarks necesarios (0-12)
             # Obtener posiciones de la punta del índice y su articulación
             index_tip = landmark_list[8]  # Punta del dedo índice
-            index_joint = landmark_list[6]  # Articulación del dedo índice
+            index_joint = landmark_list[12]  # Articulación del dedo índice
 
             # Calcular distancia entre la punta y la articulación
             distance = self.calculate_finger_distance(index_tip, index_joint)
@@ -101,13 +126,19 @@ class Gestures:
         # Procesar movimiento y click
         is_in_bounds = self.move_mouse(img, landmark_list)
         is_clicking = self.click_mouse(img, landmark_list)
+        screenshot=self.screenshot(img,landmark_list)
 
         # Visualización
         if len(landmark_list) >= 9:  # Asegurarse de que existe el landmark del índice
             index_finger = landmark_list[8]
             if is_in_bounds:
                 # Verde si está haciendo click, magenta si no
-                color = (0, 255, 0) if is_clicking else (255, 0, 255)
+                if is_clicking:
+                    color = (0, 255, 0)
+                elif screenshot:
+                    color = (0,255,255)
+                else: 
+                    color = (255, 0, 255)
                 cv.circle(img, (index_finger[1], index_finger[2]), 15, color, cv.FILLED)
             else:
                 # Rojo si está fuera del área
